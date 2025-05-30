@@ -1,94 +1,139 @@
-import React, { useState, useEffect } from 'react';
-import Webcam from 'react-webcam';
-import { ReactMediaRecorder } from 'react-media-recorder';
+import React, { useState, useEffect, useRef } from "react";
+import Webcam from "react-webcam";
+import { ReactMediaRecorder } from "react-media-recorder";
 
 const questions = [
-  'Tell me about yourself.',
-  'What are your strengths and weaknesses?',
-  'Why do you want this job?',
-  'Describe a challenge you faced and how you handled it.',
-  'Where do you see yourself in five years?'
+  "Tell me about yourself.",
+  "Why do you want this job?",
+  "What are your strengths?",
+  "Describe a challenge you’ve faced.",
+  "Where do you see yourself in 5 years?",
 ];
 
 const Interview = () => {
+  const [hasStarted, setHasStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
-  const [responses, setResponses] = useState([]);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [audioBlobs, setAudioBlobs] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+
+  // refs to control recording externally
+  const startRecordingRef = useRef(null);
+  const stopRecordingRef = useRef(null);
 
   useEffect(() => {
-    if (currentQuestion < questions.length && timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && currentQuestion < questions.length) {
-      setCurrentQuestion((prev) => prev + 1);
-      setTimeLeft(60);
-    } else if (currentQuestion === questions.length && timeLeft === 0) {
-      setShowFeedback(true);
+    let timer;
+    if (hasStarted && isRecording) {
+      if (timeLeft > 0) {
+        timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      } else {
+        // Auto stop recording when timer hits 0
+        handleStopRecording();
+      }
     }
-  }, [timeLeft, currentQuestion]);
+    return () => clearTimeout(timer);
+  }, [timeLeft, isRecording, hasStarted]);
 
-  const handleStopRecording = (blob) => {
-    setAudioBlobs((prev) => [...prev, blob]);
+  const handleStartInterview = () => {
+    setHasStarted(true);
+    setCurrentQuestion(0);
+    setTimeLeft(60);
+    setFeedback(null);
+  };
+
+  const handleStartRecording = () => {
+    if (startRecordingRef.current) {
+      startRecordingRef.current();
+    }
+    setIsRecording(true);
+    setTimeLeft(60);
+  };
+
+  const handleStopRecording = () => {
+    if (stopRecordingRef.current) {
+      stopRecordingRef.current();
+    }
+    setIsRecording(false);
+
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      setTimeLeft(60);
+    } else {
+      setHasStarted(false);
+      setFeedback("Interview complete! AI Feedback: Well done.");
+    }
   };
 
   return (
-    <div className="flex flex-col md:flex-row p-6 min-h-screen bg-gray-100">
-      <div className="md:w-1/2 p-4">
-        <h2 className="text-2xl font-bold mb-4 text-blue-700">Interview Instructions</h2>
-        <ul className="list-disc list-inside space-y-2 text-gray-700">
-          <li>Answer each question within 1 minute.</li>
-          <li>Your audio will be recorded automatically.</li>
-          <li>Try to stay calm and confident.</li>
-          <li>Feedback will be shown at the end of the interview.</li>
-        </ul>
-        <div className="mt-10">
-          <h3 className="text-xl font-semibold text-pink-600">Question {currentQuestion + 1} of {questions.length}</h3>
-          {currentQuestion < questions.length ? (
-            <>
-              <p className="text-lg mt-2">{questions[currentQuestion]}</p>
-              <p className="mt-2 text-sm text-gray-500">Time left: {timeLeft} seconds</p>
-            </>
-          ) : (
-            <p className="mt-2 text-lg text-green-600">Interview completed!</p>
-          )}
-        </div>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-gray-50 text-gray-800">
+      <h1 className="text-4xl font-bold mb-4">Interview Room</h1>
 
-      <div className="md:w-1/2 p-4 flex flex-col items-center justify-center">
-        <Webcam audio={false} screenshotFormat="image/jpeg" className="rounded-xl shadow-md w-full max-w-md" />
-        <div className="mt-4 w-full max-w-md">
-          <ReactMediaRecorder
-            audio
-            onStop={(blobUrl, blob) => handleStopRecording(blob)}
-            render={({ startRecording, stopRecording }) => (
-              <div className="flex gap-4 mt-2">
-                <button
-                  onClick={startRecording}
-                  className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-                >
-                  Start Recording
-                </button>
-                <button
-                  onClick={stopRecording}
-                  className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded"
-                >
-                  Stop Recording
-                </button>
-              </div>
-            )}
-          />
-        </div>
-
-        {showFeedback && (
-          <div className="mt-6 bg-white p-4 rounded shadow-md">
-            <h3 className="text-xl font-bold mb-2 text-green-700">AI Feedback</h3>
-            <p className="text-gray-700">Thank you for completing the interview. Our AI is analyzing your responses...</p>
-            {/* You can plug in your backend AI analysis here and display the results */}
+      {!hasStarted ? (
+        <>
+          <p className="text-lg text-center mb-6 max-w-xl">
+            Welcome! When you click "Start Interview", you will be asked 5 questions. 
+            Each question has a 1-minute timer. Your responses will be recorded via audio.
+          </p>
+          <button
+            onClick={handleStartInterview}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
+          >
+            Start Interview
+          </button>
+        </>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full mt-8">
+          {/* Instructions */}
+          <div className="p-6 bg-white shadow-xl rounded-xl">
+            <h2 className="text-2xl font-semibold mb-4">Question {currentQuestion + 1}</h2>
+            <p className="mb-4 text-gray-700">{questions[currentQuestion]}</p>
+            <p className="text-sm text-gray-500">Time left: {timeLeft}s</p>
           </div>
-        )}
-      </div>
+
+          {/* Webcam and Recorder */}
+          <div className="p-6 bg-white shadow-xl rounded-xl flex flex-col items-center">
+            <Webcam className="w-full max-w-md rounded-xl mb-4" />
+            <ReactMediaRecorder
+              audio
+              render={({ status, startRecording, stopRecording }) => {
+                startRecordingRef.current = startRecording;
+                stopRecordingRef.current = stopRecording;
+                return (
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="text-sm text-gray-600">Audio status: {status}</p>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={handleStartRecording}
+                        disabled={isRecording}
+                        className={`px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 ${
+                          isRecording ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        Start Recording
+                      </button>
+                      <button
+                        onClick={handleStopRecording}
+                        disabled={!isRecording}
+                        className={`px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 ${
+                          !isRecording ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        Stop Recording
+                      </button>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {feedback && (
+        <div className="mt-8 p-6 bg-green-100 border-l-4 border-green-600 text-green-800 rounded-xl w-full max-w-xl text-center">
+          {feedback}
+        </div>
+      )}
     </div>
   );
 };
