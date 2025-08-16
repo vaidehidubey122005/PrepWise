@@ -1,0 +1,22 @@
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import React from 'react'
+
+function JobDescription({onHandleInputChange}:any) {
+  return (
+    <div className='border rounde-2xl p-10'>
+        <div>
+        <label>Job Title</label>
+        <Input placeholder='Ex. Full Stack React Developer'
+        onChange={(event)=>onHandleInputChange('JobTitle',event.target.value)}/>
+    </div>
+    <div className='mt-6'>
+        <label>Job Description</label>
+        <Textarea placeholder='Enter Job Description' className='h-[200px]'
+        onChange={(event)=>onHandleInputChange('JobDescription',event.target.value)}/>
+    </div>
+    </div>
+  )
+}
+
+export default JobDescription

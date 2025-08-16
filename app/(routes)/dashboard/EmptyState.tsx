@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import CreateInterviewDialog from '../_components/CreateInterviewDialog';
 
 const EmptyState = () => {
   return (
@@ -14,7 +15,8 @@ const EmptyState = () => {
       <h2 className="mt-4 text-lg text-gray-500">
         You do not have any Interview created
       </h2>
-      <Button size="lg">+ Create Interview</Button>
+
+      <CreateInterviewDialog/>
     </div>
   );
 };
