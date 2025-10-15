@@ -9,9 +9,21 @@ export default defineSchema({
   }),
 
   InterviewSessionTable: defineTable({
-    interviewQuestions: v.any(),
-    resumeUrl: v.string(),
+    interviewQuestions: v.optional(v.any()),
+    resumeUrl: v.optional(v.string()),
     userId: v.id("UserTable"),
     status: v.string(),
+    jobTitle: v.optional(v.string()),
+    jobDescription: v.optional(v.string()),
+    // Added optional field to fix schema validation error
+    answers: v.optional(
+      v.array(
+        v.object({
+          answerText: v.string(),
+          questionIndex: v.number(),
+          questionText: v.string(),
+        })
+      )
+    ),
   }),
 });
